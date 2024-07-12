@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="../../layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<form class="layui-form" id="updateform" lay-filter="demo-val-filter">
+    <div class="layui-form-item" style="margin-top: 30px; margin-bottom: 0px;">
+        <div class="layui-inline">
+          <label class="layui-form-label">作业标题</label>
+          <div class="layui-input-inline layui-input-wrap">
+            <input type="tel" id="title" name="title"  class="layui-input demo-phone">
+          </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">作业要求</label>
+            <div class="layui-input-inline layui-input-wrap">
+              <input type="tel" id="requre" name="requre"  class="layui-input demo-phone">
+            </div>
+          </div>
+    </div>
+  <div class="layui-form-item" style="margin-top: 30px; margin-bottom: 0px;">
+    <div class="layui-inline">
+      <label class="layui-form-label">发布教师</label>
+      <div class="layui-input-inline layui-input-wrap">
+        <input type="tel" id="teacher" name="teacher"  class="layui-input demo-phone">
+      </div>
+    </div>
+    <div class="layui-inline">
+        <label class="layui-form-label">发布班级</label>
+        <div class="layui-input-inline layui-input-wrap">
+          <input type="tel" id="clazz" name="clazz"  class="layui-input demo-phone">
+        </div>
+      </div>
+  </div>
+  <div class="layui-inline" style="margin-top: 30px;">
+    <label class="layui-form-label">发布时间</label>
+    <div class="layui-input-inline layui-input-wrap" >
+      <input type="text" id="startTime" name="startTime" class="layui-input" id="ID-laydate-type-datetime-1" placeholder="yyyy-MM-dd HH:mm:ss">
+    </div>
+  </div>
+  <div class="layui-inline" style="margin-top: 30px;">
+    <label class="layui-form-label">截止时间</label>
+    <div class="layui-input-inline layui-input-wrap">
+      <input type="text" id="endTime" name="endTime" class="layui-input" id="ID-laydate-type-datetime-2" placeholder="yyyy-MM-dd HH:mm:ss">
+    </div>
+  </div>
+  <!-- 隐藏域 -->
+   <input type="hidden" id="taskId" name="id">
+  <div class="layui-form-item" style="margin-top: 45px;">
+    <div class="layui-input-block">
+      <button type="button" lay-on="submit" class="layui-btn">立即编辑</button>
+    </div>
+  </div>
+</form>
+  
+<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+<script src="../../layui/layui.js"></script> 
+<script>
+layui.use(function(){
+  var $ = layui.$;
+  var form = layui.form;
+  var util = layui.util;
+
+  util.on('lay-on',{
+    submit:function(){
+      let data = form.val("demo-val-filter")
+      console.log(data);
+      $.ajax({
+        url: 'http://localhost:8080/task',
+        method: 'put',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify(data),
+        success: function(res){
+            if(res.flag == true){
+            layer.msg('修改成功', {icon: 1});
+            setTimeout(function(){
+                var index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+                parent.layer.close(index); // 再执行关闭
+            },1000)
+            }else{
+                layer.msg('修改失败', {icon: 2});
+            }
+        }
+     })
+    }
+ })
+
+
+  // 日期时间选择器 - 日期和时间选择器同时显示（全面板）
+  var laydate = layui.laydate;
+        laydate.render({
+            elem: '#ID-laydate-type-datetime-1',
+            type: 'datetime',
+            fullPanel: true // 2.8+
+        });
+        laydate.render({
+            elem: '#ID-laydate-type-datetime-2',
+            type: 'datetime',
+            fullPanel: true // 2.8+
+        });
+})
+
+</script>
+</body>
+</html>

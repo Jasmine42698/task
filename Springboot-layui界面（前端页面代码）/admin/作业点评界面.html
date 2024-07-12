@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+</head>
+<style>
+    .layui-table-cell {
+        height: auto;
+        line-height: 28px;
+    }
+    .layui-table th{
+        text-align: center;
+    }
+    .layui-table{
+        text-align: center;
+    }
+    .layui-table img {
+        max-width: 65px;
+    }
+</style>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">学生</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="student" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">教师</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="teacher" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">最低分</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" name="startScore" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">最高分</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" name="endScore" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button type="submit" class="layui-btn layui-btn-primary"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <script type="text/html" id="currentTableBar">
+            <a class="layui-btn layui-btn-normal layui-btn-xs data-count-edit" lay-event="edit">编辑</a>
+            <a class="layui-btn layui-btn-xs layui-btn-danger data-count-delete" lay-event="delete">删除</a>
+        </script>
+
+    </div>
+</div>
+<script src="../layui/layui.js" charset="utf-8"></script>
+<script>
+    let $ = layui.$;
+    let data ={};
+    $.ajax({
+        async:false,
+        url:'http://localhost:8080/comment',
+        method:'get',
+        success:function (res) {
+            data = res.data;
+        }
+    })
+
+    layui.use(['form', 'table'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            data:data,
+            toolbar: '#toolbarDemo',
+            defaultToolbar: ['filter', 'exports', 'print', {
+                title: '提示',
+                layEvent: 'LAYTABLE_TIPS',
+                icon: 'layui-icon-tips'
+            }],
+            cols: [[
+                {field: 'id', width: 100, title: 'ID', sort: true},
+                {field: 'teacher', width: 100, title: '发布教师' ,width:"100"},
+                {field: 'title', width: 200, title: '作业标题'},
+                {field: 'student', width: 100, title: '学生'},
+                {field: 'score', title: '分数', width: 100, sort:true},
+                {field: 'comment', width: 250, title: '评语'},
+                {fixed:"right" ,title: '操作', minWidth: 150, toolbar: '#currentTableBar', align: "center"}
+            ]],
+            even: true,
+            limits: [7, 15, 23, 31],
+            limit: 7,
+            page: true,
+            skin: 'line'
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            console.log(data.field);
+            console.log(data.field.startScore);
+            
+            var startScore = data.field.startScore;
+            var endScore = data.field.endScore;
+            var reg = new RegExp("^(\\d|[1-9]\\d|100)$");
+            if(startScore != "" && !reg.test(startScore)) {
+                layer.msg("请输入1-100的数字",{icon:2});
+                return false;
+            }
+            if(endScore != "" && !reg.test(endScore)) {
+                layer.msg("请输入1-100的数字",{icon:2});
+                return false;
+            }
+
+            $.ajax({
+                url:'http://localhost:8080/comment/condition',
+                method:'get',
+                data:data.field,
+                success:function (res) {
+                    if(res.flag == true){
+                        data = res.data;
+                        layer.msg("查询成功！",{icon:1})
+                    }else{
+                        layer.msg("信息不存在！",{icon:2})
+                    }
+                    //执行搜索重载
+                    table.reload('currentTableId',{
+                            data:res.data
+                    })
+                }
+            })
+
+            return false;
+        });
+        
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'edit') {
+                var id = data.id;
+                var reg = new RegExp("^(\\d|[1-9]\\d|100)$");
+
+                layer.prompt({title: '请输入修改的分数'}, function(value, index, elem){
+                    if(value == '') {
+                        layer.msg('修改的分数不能为空！',{icon:5})
+                        return;
+                    }
+                    if(!reg.test(value)) {
+                            layer.msg("请输入1-100的数字",{icon:2});
+                            return false;
+                        }
+                    // 关闭 prompt
+                    layer.close(index);
+                    $.ajax({
+                        url: 'http://localhost:8080/comment',
+                        method: 'put',
+                        data: {
+                            id:id,
+                            score:value
+                        },
+                        success: function(res){
+                            if(res.flag == true){
+                                layer.msg("修改成功！",{icon:6})
+                                $.ajax({
+                                    url:'http://localhost:8080/comment',
+                                    method:'get',
+                                    success:function (res) {
+                                        table.reload('currentTableId',{
+                                            data:res.data
+                                        })
+                                    }
+                                })
+                                return;
+                            }
+                            layer.msg("修改失败！",{icon:5})
+                        }
+                    })
+                })    
+                return false;
+            } else if (obj.event === 'delete') {
+                layer.confirm('真的删除行么', function (index) {
+                    $.ajax({
+                        url: 'http://localhost:8080/comment/'+data.id,
+                        method: 'delete',
+                        success: function(res){
+                            if(res.flag == true){
+                                layer.msg("删除成功！",{icon:6})
+                                obj.del();
+                                return;
+                            }
+                            layer.msg("删除失败！",{icon:5})
+                        }
+                    })
+                    layer.close(index);
+                });
+            }
+        });
+
+    });
+</script>
+
+</body>
+</html>

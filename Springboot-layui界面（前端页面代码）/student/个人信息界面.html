@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="../layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<form class="layui-form" id="admin" class="layui-form" lay-filter="adminData" >
+  <div class="layui-form-item" style="margin-top: 20px;">
+    <div class="layui-inline">
+      <label class="layui-form-label">用户名</label>
+      <div class="layui-input-inline layui-input-wrap">
+        <input type="tel" name="name" readonly  class="layui-input demo-phone">
+      </div>
+      <div class="layui-form-mid" style="padding: 0!important;"> 
+        <div class="layui-form-item">
+          <label class="layui-form-label">学号</label>
+          <div class="layui-input-inline layui-input-wrap">
+            <input type="text" readonly name="stuId" class="layui-input">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="layui-form-item">
+    <div class="layui-inline">
+      <label class="layui-form-label">头像</label>
+      <!-- 隐藏域 -->
+      <input type="hidden" id="head" name="head">
+      <input type="hidden" id="id" name="id">
+      <div class="layui-input-inline layui-input-wrap" style="width: 100px; height: 100px; border: 1px solid rgb(141, 134, 134,0.3);">
+        <img src="" id="imgsrc" style="background-size: cover; width: 100%; height: 100%">
+      </div>
+    </div>
+  </div>
+
+  <div class="layui-form-item">
+    <div class="layui-inline">
+      <label class="layui-form-label">班级</label>
+      <div class="layui-input-inline">
+        <input type="text" id="clazz" readonly name="clazz" class="layui-input">
+      </div>
+    </div>
+  </div>
+
+  <div class="layui-form-item">
+    <div class="layui-inline">
+      <label class="layui-form-label">手机号</label>
+      <div class="layui-input-inline">
+        <input type="text" readonly name="phone" class="layui-input">
+      </div>
+    </div>
+  </div>
+
+  <div class="layui-form-item">
+    <label class="layui-form-label">性别</label>
+    <div class="layui-input-inline">
+      <input name="sex" readonly style="position:absolute; top:9px; left:15px; border: none;">
+    </div>
+  </div>
+  <div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">个性签名</label>
+    <div class="layui-input-block" style="width: 30%;">
+      <textarea readonly class="layui-textarea" name="snapshot"></textarea>
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+      <button type="button" class="layui-btn" lay-on="update">立即修改</button>
+    </div>
+  </div>
+</form>
+  
+<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+<script src="../layui/layui.js"></script>
+<script>
+  //这里是点了导航栏的个人信息界面按钮，才会触发这里的javascript，  
+
+layui.use(['layer', 'util'], function(){
+    let util = layui.util;
+    let layer = layui.layer;
+    let form = layui.form;
+    let $ = layui.$;
+    //监听提交
+    
+    //发送ajax请求，获取数据
+    $.ajax({
+      async:false,
+      url: "http://localhost:8080/student/byId",
+      method:'get',
+      success:function(res){
+        //将获取到的数据渲染到页面上
+        form.val('adminData',res.data[0]);
+        document.querySelector("#clazz").value = res.data[0].clazz.name;
+        $("#sex").html(res.data[0].sex);
+        document.querySelector('#imgsrc').src = "../imgs/" + res.data[0].head;
+      }
+    })
+    
+    util.on('lay-on', {
+      update: function(){
+        //点击修改按钮，弹出修改框
+        layer.open({
+        type: 2,
+        area: ['60%','80%'],
+        skin: 'layui-layer-rim', // 加上边框
+        content: ['更改信息页面/更改个人信息.html', 'no'], // 数组第二个成员设为 no 即屏蔽 iframe 滚动条
+        success: function(layero, index){
+          //获取表单数据
+          let formData = form.val('adminData');
+
+          var iframeWin = window[layero.find('iframe')[0]['name']]; 
+          var body = layer.getChildFrame('body', index);
+          //渲染
+          body.find('#stuName').val(formData.name);
+          body.find('#stuId').val(formData.stuId);
+          body.find('#clazz').val(formData.clazz.name);
+          body.find('#stuPhone').val(formData.phone);
+          body.find('#id').val(formData.id);
+          body.find('input[name=sex][value=男]').attr("checked",formData.sex=='男' ? true : false);
+		    body.find('input[name=sex][value=女]').attr("checked",formData.sex=='女' ? true : false);
+          
+          console.log(formData.head);
+          if(formData.head != null){
+            body.find('.headsrc')[0].src = "../../imgs/" + formData.head
+          }
+
+          iframeWin.layui.form.render();
+        },
+        end:function(){
+          //监听关闭，刷新页面
+          $.ajax({
+            url: 'http://localhost:8080/student/byId',
+            method: 'get',
+            success: function(res){
+              console.log(res);
+              //刷新页面
+              form.val('adminData',res.data[0]);
+              document.querySelector("#clazz").value = res.data[0].clazz.name;
+              document.querySelector('#imgsrc').src = "../imgs/" + res.data[0].head;
+              //注意把隐藏域的头像地址页刷新
+              $("#head").val(res.data[0].head)
+            }
+          })
+        }
+        })
+      }
+    });
+})
+
+</script>
+</body>
+</html>

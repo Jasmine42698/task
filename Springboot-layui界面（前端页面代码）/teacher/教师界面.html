@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>layout 管理系统大布局 - Layui</title>
+  <link rel="stylesheet" href="../layui/css/layui.css">
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+  <div class="layui-header">
+   <div class="layui-logo layui-hide-xs layui-bg-black">作业管理系统</div>
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item" lay-header-event="menuRight" lay-unselect>
+        <a href="javascript:;">
+          <!-- <i class="layui-icon layui-icon-more-vertical"></i> -->
+           退出登录
+        </a>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree">
+        <li class="layui-nav-item layui-nav-itemed">
+          <a href="javascript:;">教师个人信息管理</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;" id="li1" lay-on="onclick1">个人信息</a></dd>
+            <dd><a href="javascript:;" lay-on="updatePassword">修改密码</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">教师学生查询</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;" lay-on="onclick2">学生信息</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">作业管理</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;" lay-on="successLevel">完成度信息</a></dd>
+            <dd><a href="javascript:;" lay-on="clazz">作业发布</a></dd>
+          </dl>
+        </li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="layui-body">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;" >
+        <iframe src="教师个人信息界面.html" width="100%" height="650px" frameborder="0"></iframe>
+    </div>
+  </div>
+  
+  <!-- 底部固定区域 -->
+  <!-- <div class="layui-footer">
+    底部固定区域
+  </div> -->
+</div>
+<script src="../layui/layui.js"></script>
+<script>
+  //初始加载，让第一个菜单高亮
+  document.querySelector(".layui-nav-child dd").className = "layui-this";
+
+//JS 
+layui.use(['element', 'layer', 'util'], function(){
+  var element = layui.element
+  ,layer = layui.layer
+  ,util = layui.util
+  ,$ = layui.$;
+
+  //头部事件
+  util.event('lay-header-event', {
+    //左侧菜单事件
+    menuLeft: function(othis){
+      layer.msg('展开左侧菜单的操作', {icon: 0});
+    }
+    ,menuRight: function(){
+      layer.confirm('确定退出登录吗？', function (index) {
+        location.href = "../login/login.html"
+      })
+    }
+  });
+
+  util.on('lay-on',{
+    onclick1:function(othis,layero){
+      $("iframe").attr("src","教师个人信息界面.html")
+    },
+    onclick2:function(othis){
+      $("iframe").attr("src","教师查看学生信息界面.html")
+    },
+    updatePassword:function(othis){
+      $("iframe").attr("src","../admin/更改信息页面/更改密码.html")
+    },
+    successLevel:function(othis){
+      $("iframe").attr("src","教师查看作业完成度.html")
+    },
+    clazz:function(othis){
+      $("iframe").attr("src","教师作业发布.html")
+    }
+  })
+
+});
+</script>
+</body>
+</html>
+      

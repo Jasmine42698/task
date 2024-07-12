@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>主界面</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+
+<div style="padding: 16px;" id="tadiv"> 
+  <table class="layui-hide" id="test" lay-filter="test"></table>
+</div>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-form-item">
+      <div class="layui-inline">
+        <form id="addform" class="layui-form" lay-filter="byselect">
+          <div class="layui-input-inline" style="width: 15%;">
+              <input type="tel" name="stuId" placeholder="学号" class="layui-input">
+          </div>
+          <div class="layui-input-inline" style="width: 15%;">
+              <input type="tel" name="name" placeholder="姓名" class="layui-input">
+          </div>
+          <div class="layui-input-inline" style="width: 15%;">
+            <input type="tel" name="sex" placeholder="性别" class="layui-input">
+          </div>
+          <div class="layui-input-inline" style="width: 15%;">
+          <input type="tel" name="clazz" placeholder="班级" class="layui-input">
+        </form>
+      </div>
+        <button class="layui-btn layui-btn-sm" lay-event="search" style="height: 37px; width: 65px; margin-left: 5px;">搜索</button>
+    </div>
+    </div>
+    <button class="layui-btn layui-btn-sm" lay-event="getCheckData">获取选中行数据</button>
+    <button class="layui-btn layui-btn-sm" lay-event="getData">获取当前页数据</button>
+    <button class="layui-btn layui-btn-sm" lay-event="add" style="background-color: rgb(94, 163, 25);">添加</button>
+  </div>
+</script>
+<script type="text/html" id="barDemo">
+  <div class="layui-clear-space">
+    <a class="layui-btn layui-btn-xs" lay-event="edit" style="background-color: rgb(219, 94, 115);">编辑</a>
+    <a class="layui-btn layui-btn-xs" lay-event="more">删除</a>
+  </div>
+</script>  
+<script src="../layui/layui.js"></script>
+<script>
+layui.use(['table', 'dropdown'], function(){
+
+  var url = location.href
+
+  var table = layui.table;
+  var dropdown = layui.dropdown;
+  
+  let $ = layui.$
+  let tdata
+  
+  $.ajax({
+    async:false,
+    url: 'http://localhost:8080/student',
+    method: 'get',
+    success: function(res){
+      tdata = res.data
+    }
+  })
+
+    //班级页面跳过来才会执行下面的代码
+    if(url.indexOf("?") != -1){
+      var cname = window.location.href.split("?")[1].split("=")[1];//得到带过来的参数
+      $.ajax({
+        async:false,
+        url: 'http://localhost:8080/student/' + cname,
+        method: 'get',
+        success: function(res){
+          tdata = res.data
+        }
+      })
+    }
+
+  // 创建渲染实例
+  table.render({
+    elem: '#test',
+    //url: 'http://localhost:8080/data', // 此处为静态模拟数据，实际使用时需换成真实接口
+    data:tdata,
+
+    toolbar: '#toolbarDemo',
+    height:"500px",
+    css: [ // 重设当前表格样式
+      '.layui-table-tool-temp{padding-right: 145px;}'
+    ].join(''),
+    cellMinWidth: 80,
+    totalRow: true, // 开启合计行
+    page: true,
+    limits: ['10', '20', '30'],
+    cols: [[
+      {type: 'checkbox', fixed: 'left'},
+      // {field:'id', fixed: 'left', width:80, title: 'ID', sort: true, totalRow: '合计：'},
+      {field:'id', title: '编号',sort:true},
+      {field:'stuId', title:'学号' },
+      {field:'name', title: '姓名'},
+      {field:'head', title: '头像',css: '.layui-table img{max-width: 60px;}',
+      templet:function(d){return '<img src=../imgs/' + d.head + ' style:"width:100px,height:60px">'}
+      },
+      // {field:'experience', width: 100, title: '积分', sort: true, totalRow: '{{= d.TOTAL_NUMS }} 😊'}, 
+      {field:'sex', title:'性别', sort:true},
+      {field:'phone', title:'手机号'},
+      {field:'clazz.name', title:'班级',templet:function(d){
+        if(d.clazz != null){
+          return '<lable>'+d.clazz.name+'</lable>'
+        }
+      }},
+      {fixed: 'right', title:'操作', width: 134, minWidth: 125, toolbar: '#barDemo'}
+    ]],
+    done: function(){
+    },
+    error: function(res, msg){
+      console.log(res, msg)
+    }
+  });
+  
+  // 工具栏事件
+  table.on('toolbar(test)', function(obj){
+    var id = obj.config.id;
+    var checkStatus = table.checkStatus(id);
+    var othis = lay(this);
+    switch(obj.event){
+      case 'getCheckData':
+        var data1 = checkStatus.data;
+        layer.alert(layui.util.escape(JSON.stringify(data1)));
+      break;
+      case 'getData':
+        var getData = table.getData(id);
+        layer.alert(layui.util.escape(JSON.stringify(getData)));
+      break;
+      case 'add':
+        layer.open({
+          title: '添加',
+          type: 2,
+          area: ['60%','80%'],
+          content: '添加信息页面/添加学生信息.html',
+          end: function(){
+          $.ajax({
+            url: 'http://localhost:8080/student',
+            method: 'get',
+            success: function(res){
+              table.reload('test',{
+                data:res.data
+              })
+            }
+          })
+        }
+        });
+      break;
+      case 'search':
+
+        let form = layui.form;
+        let formdata = form.val('byselect');
+        //进行编码，防止请求中文乱码
+        // formdata.name = encodeURI(formdata.name);
+        formdata.sex = encodeURI(formdata.sex);
+        formdata.clazz = encodeURI(formdata.clazz);
+
+        $.ajax({
+          url: 'http://localhost:8080/student/byQuery',
+          method: 'get',
+          data: formdata,
+          success: function(res){
+            //表格重载
+            table.reload('test',{
+              data:res.data
+            })
+          }
+        })
+      break;
+      case 'LAYTABLE_TIPS':
+        layer.alert('自定义工具栏图标按钮');
+      break;
+    };
+  });
+  
+  // 触发单元格工具事件
+  table.on('tool(test)', function(obj){ // 双击 toolDouble
+    var data = obj.data; // 获得当前行数据
+    
+    if(obj.event === 'edit'){
+      console.log(data);
+      layer.open({
+        title: '编辑 - id:'+ data.id,
+        type: 2,
+        area: ['60%','80%'],
+        content: '更改信息页面/更改学生信息.html',
+        success: function(layero, index){
+          //得到iframe页的窗口对象
+          var iframeWin = window[layero.find('iframe')[0]['name']]; 
+        
+          // 获取 iframe 中 body 元素的 jQuery 对象
+          var body = layer.getChildFrame('body', index);
+          // 给 iframe 页中的某个输入框赋值
+          body.find('#stuname').val(data.name);
+          body.find('#stuId').val(data.stuId);
+          body.find('#stuphone').val(data.phone);
+          body.find('input[name=sex][value=男]').attr("checked",data.sex=='男' ? true : false);
+		      body.find('input[name=sex][value=女]').attr("checked",data.sex=='女' ? true : false);
+          body.find('#stuclazz').val(data.clazz.name);
+          if(data.head != null){
+            body.find('.stuhead')[0].src = "../../imgs/" + data.head
+          }
+          //隐藏域
+          body.find('#head').val(data.head);
+          body.find('#id').val(data.id);
+
+          // 触发渲染
+          iframeWin.layui.form.render();
+        },
+        end: function(){
+          //发送ajax请求 删除原头像文件 刷新表格
+          $.ajax({
+            url: 'http://localhost:8080/student',
+            method: 'get',
+            success: function(res){
+              table.reload('test',{
+                data:res.data
+              })
+            }
+          })
+        }
+    });
+    // 表单赋值
+    } else if(obj.event === 'more'){
+      layer.confirm('真的删除行 [id: '+ data.id +'] 么?', function(index){
+        $.ajax({
+          url:'http://localhost:8080/student/' + data.id,
+          method:'delete',
+          success: function(res){
+            if(res.flag == true){
+              obj.del();   // 删除对应行（tr）的DOM结构
+              layer.close(index);
+              layer.msg('删除成功',{icon:1});
+            }else{
+              layer.msg('删除失败',{icon:2});
+            }
+          }
+        })
+      });
+    }
+  });
+ 
+  // 触发表格复选框选择
+  table.on('checkbox(test)', function(obj){
+    console.log(obj)
+  });
+ 
+  // 触发表格单选框选择
+  table.on('radio(test)', function(obj){
+    console.log(obj)
+  });
+  
+  // 行单击事件
+  table.on('row(test)', function(obj){
+    //console.log(obj);
+    //layer.closeAll('tips');
+  });
+});
+</script>
+</body>
+</html>

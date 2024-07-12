@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+</head>
+<style>
+    .layui-table-cell {
+        height: auto;
+        line-height: 28px;
+    }
+    .layui-table th{
+        text-align: center;
+    }
+    .layui-table{
+        text-align: center;
+    }
+    .layui-table img {
+        max-width: 65px;
+    }
+</style>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">作业标题</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="title" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">班级</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="clazz" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                          <label class="layui-form-label">发布时间</label>
+                          <div class="layui-input-inline">
+                            <input type="text" name="startTime" class="layui-input" id="ID-laydate-type-datetime-1" placeholder="yyyy-MM-dd HH:mm:ss">
+                          </div>
+                        </div>
+                        <div class="layui-inline">
+                          <label class="layui-form-label">截止时间</label>
+                          <div class="layui-input-inline">
+                            <input type="text" name="endTime" class="layui-input" id="ID-laydate-type-datetime-2" placeholder="yyyy-MM-dd HH:mm:ss">
+                          </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button type="submit" class="layui-btn layui-btn-primary"  lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+
+        <script type="text/html" id="toolbarDemo">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-normal layui-btn-sm data-add-btn" lay-event="add"> 添加 </button>
+            </div>
+        </script>
+
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+        <script type="text/html" id="currentTableBar">
+            <a class="layui-btn layui-btn-normal layui-btn-xs data-count-edit" lay-event="edit">编辑</a>
+            <a class="layui-btn layui-btn-xs layui-btn-danger data-count-delete" lay-event="delete">删除</a>
+        </script>
+
+    </div>
+</div>
+<script src="../layui/layui.js" charset="utf-8"></script>
+<script>
+    let $ = layui.$;
+    let data ={};
+    $.ajax({
+        async:false,
+        url:'http://localhost:8080/task',
+        method:'get',
+        success:function (res) {
+            data = res.data;
+        }
+    })
+
+    layui.use(['form', 'table'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table;
+
+        table.render({
+            elem: '#currentTableId',
+            data:data,
+            toolbar: '#toolbarDemo',
+            defaultToolbar: ['filter', 'exports', 'print', {
+                title: '提示',
+                layEvent: 'LAYTABLE_TIPS',
+                icon: 'layui-icon-tips'
+            }],
+            cols: [[
+                {field: 'id', width: 120, title: 'ID', sort: true},
+                {field: 'title', width: 100, title: '作业标题' },
+                {field: 'requre', width: 150, title: '作业要求'},
+                {field: 'startTime', width: 180, title: '发布时间', sort: true},
+                {field: 'endTime', title: '截止时间', width: 180},
+                {field: 'teacher', width: 80, title: '发布教师',width: 120},
+                {field: 'clazz', width: 80, title: '发布班级',width: 120},
+                {fixed:"right" ,title: '操作', minWidth: 150, toolbar: '#currentTableBar', align: "center"}
+            ]],
+            even: true,
+            limits: [5, 10, 15, 20],
+            limit: 5,
+            page: true,
+            skin: 'line'
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            // var result = JSON.stringify(data.field);
+            console.log(data.field);
+            $.ajax({
+                url:'http://localhost:8080/task/condition',
+                method:'get',
+                data:data.field,
+                success:function (res) {
+                    if(res.flag == true){
+                        data = res.data;
+                        layer.msg("查询成功！",{icon:1})
+                    }else{
+                        layer.msg("信息不存在！",{icon:2})
+                    }
+                    //执行搜索重载
+                    table.reload('currentTableId',{
+                            data:res.data
+                        })
+                }
+            })
+            return false;
+        });
+
+        /**
+         * toolbar监听事件
+         */
+        table.on('toolbar(currentTableFilter)', function (obj) {
+            if (obj.event === 'add') {  // 监听添加操作
+                var index = layer.open({
+                    title: '添加作业信息',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['60%', '80%'],
+                    content: '添加信息页面/添加作业信息.html',
+                    end:function(){
+                        $.ajax({
+                            url: 'http://localhost:8080/task',
+                            method: 'get',
+                            success: function(res){
+                            table.reload('currentTableId',{
+                                data:res.data
+                            })
+                            }
+                        })
+                    }
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            }
+        });
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'edit') {
+
+                var index = layer.open({
+                    title: '编辑作业信息',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['60%', '80%'],
+                    content: '更改信息页面/更改作业信息.html',
+                    success: function (layero, index) {
+                        var iframeWin = window[layero.find('iframe')[0]['name']]; 
+      
+                        // 获取 iframe 中 body 元素的 jQuery 对象
+                        var body = layer.getChildFrame('body', index);
+                        // 给 iframe 页中的某个输入框赋值
+                        body.find('#title').val(data.title);
+                        body.find('#requre').val(data.requre);
+                        body.find('#teacher').val(data.teacher);
+                        body.find('#clazz').val(data.clazz);
+                        body.find('#startTime').val(data.startTime);
+                        body.find('#endTime').val(data.endTime);
+                    
+                        //隐藏域
+                        body.find('#taskId').val(data.id);    
+                    
+                        // 触发渲染
+                        iframeWin.layui.form.render();
+                    },
+                    end:function(){
+                        $.ajax({
+                            url: 'http://localhost:8080/task',
+                            method: 'get',
+                            success: function(res){
+                            table.reload('currentTableId',{
+                                data:res.data
+                            })
+                            }
+                        })
+                    }
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+                return false;
+            } else if (obj.event === 'delete') {
+                console.log(data);
+                layer.confirm('真的删除id:'+data.id+'行么', function (index) {
+                    $.ajax({
+                        url: 'http://localhost:8080/task/'+ data.id,
+                        method: 'delete',
+                        success: function(res){
+                            if(res.flag == true){
+                                layer.msg("删除成功！",{icon:6})
+                                obj.del();
+                                return;
+                            }
+                            layer.msg("删除失败！",{icon:5})
+                        }
+                    })
+                    layer.close(index);
+                });
+            }
+        });
+
+        // 日期时间选择器 - 日期和时间选择器同时显示（全面板）
+        var laydate = layui.laydate;
+        laydate.render({
+            elem: '#ID-laydate-type-datetime-1',
+            type: 'datetime',
+            fullPanel: true // 2.8+
+        });
+        laydate.render({
+            elem: '#ID-laydate-type-datetime-2',
+            type: 'datetime',
+            fullPanel: true // 2.8+
+        });
+
+    });
+</script>
+
+</body>
+</html>
